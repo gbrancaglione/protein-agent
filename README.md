@@ -15,7 +15,7 @@ An AI-powered agent built with LangChain to help you track your daily protein in
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 24+
 - OpenAI API key
 - PostgreSQL database (local or remote)
 

@@ -30,6 +30,9 @@
   ],
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "dependencies": {
     "@langchain/core": "^1.1.0",
     "@langchain/openai": "^1.1.3",
