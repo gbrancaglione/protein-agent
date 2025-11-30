@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  weight    Float?
+  target    Float?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  proteinEntries protein_entries[]
+
+  @@map("users")
+}
+
+model protein_entries {
+  id           Int      @id @default(autoincrement())
+  proteinGrams Float
+  description  String
+  timestamp    DateTime
+  createdAt    DateTime @default(now())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
+  @@index([userId])
+  @@map("protein_entries")
+}
