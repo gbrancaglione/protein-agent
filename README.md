@@ -9,12 +9,16 @@ An AI-powered agent built with LangChain to help you track your daily protein in
 - **Progress Monitoring**: Check your daily progress toward your protein goal
 - **Complete History**: View all your consumption records across all dates
 - **Entry Management**: Delete specific entries by ID when you make mistakes
-- **Interactive Chat**: Natural conversation interface for easy interaction
-- **Scalable Architecture**: Built with best practices for easy extension (WhatsApp, API endpoints, etc.)
+- **Interactive Chat**: Natural conversation interface for easy interaction (Portuguese interface)
+- **Multi-User Support**: Database-backed user system with per-user tracking
+- **Context-Aware**: Agent receives today's consumption data automatically to avoid unnecessary tool calls
+- **TypeScript**: Fully typed codebase for better maintainability
+- **Scalable Architecture**: Built with repository pattern and services layer for easy extension (WhatsApp, API endpoints, etc.)
 
 ## Prerequisites
 
 - Node.js 18+ 
+- TypeScript 5.7+ (installed via npm)
 - OpenAI API key
 - PostgreSQL database (local or remote)
 
@@ -30,22 +34,18 @@ cd protein-agent
 npm install
 ```
 
-3. Create a `.env` file in the root directory:
-```bash
-cp .env.example .env
-```
-
-4. Edit `.env` and add your configuration:
+3. Create and edit `.env` file in the root directory with your configuration:
 ```
 # OpenAI API
 OPENAI_API_KEY=your-openai-api-key-here
 
-# User settings
-USER_WEIGHT_KG=80
-DAILY_PROTEIN_TARGET_G=160
-
 # Database (PostgreSQL)
 DATABASE_URL="postgresql://user:password@localhost:5432/protein_agent?schema=public"
+
+# User Configuration (optional)
+USER_ID=1
+USER_WEIGHT_KG=80
+DAILY_PROTEIN_TARGET_G=160
 ```
 
 5. Set up the database:
@@ -63,6 +63,13 @@ DATABASE_URL="postgresql://user:password@localhost:5432/protein_agent?schema=pub
 npm run prisma:generate
 npm run prisma:migrate
 ```
+
+7. (Optional) Seed the database with a default user for development:
+```bash
+npm run seed:dev
+```
+
+This creates a default user "Gustavo" with weight 80kg and target 160g if it doesn't already exist.
 
 ## Usage
 
@@ -87,6 +94,7 @@ Type `exit`, `quit`, or `bye` to end the session, or press `Ctrl+C`.
 🍗 Protein Tracking Agent
 ==========================
 
+User: Gustavo (ID: 1)
 Daily target: 160g
 Your weight: 80kg
 
@@ -96,21 +104,23 @@ Initializing agent...
 Starting interactive session...
 Type your messages below. Type "exit", "quit", or "bye" to end the session.
 
-You: I had 200g of chicken breast for lunch
-Agent: Great job on your lunch! The 200g of chicken breast provided you with approximately 60 grams of protein...
+You: Comi 200g de peito de frango no almoço
+Agent: Ótimo trabalho no seu almoço! Os 200g de peito de frango forneceram aproximadamente 60 gramas de proteína...
 
-You: How much protein do I have left today?
-Agent: You've consumed 60 grams so far today, and you have 100 grams left to reach your daily target...
+You: Quanto de proteína me falta hoje?
+Agent: Você consumiu 60 gramas até agora hoje, e ainda faltam 100 gramas para atingir sua meta diária...
 
-You: Show me all my consumption history
-Agent: Here's your complete consumption history across all days...
+You: Mostre todo meu histórico de consumo
+Agent: Aqui está seu histórico completo de consumo em todos os dias...
 
-You: Delete the entry with ID 1764119328942-xy40me7md
-Agent: Successfully deleted the protein shake entry...
+You: Delete a entrada com ID 42
+Agent: Entrada deletada com sucesso...
 
 You: exit
 👋 Goodbye! Keep up the great work with your protein goals!
 ```
+
+**Note:** The agent interface is in Portuguese. You can interact with it in Portuguese or English.
 
 ### Single Command Mode
 
@@ -126,18 +136,21 @@ npm start "How much protein have I had today?"
 
 ### Programmatic Usage
 
-```javascript
+```typescript
 import { createProteinAgent } from './src/index.js';
-import { HumanMessage } from 'langchain';
+import { HumanMessage } from '@langchain/core/messages';
 
-const agent = await createProteinAgent();
+// Create agent for user ID 1 (default)
+const agent = await createProteinAgent(1);
 
 const response = await agent.invoke({
-  messages: [new HumanMessage("I had 150g of salmon for dinner")]
+  messages: [new HumanMessage("Comi 150g de salmão no jantar")]
 });
 
 console.log(response.messages[response.messages.length - 1].content);
 ```
+
+**Note:** The `createProteinAgent` function requires a `userId` parameter to support multi-user functionality.
 
 ## Project Structure
 
@@ -145,17 +158,29 @@ console.log(response.messages[response.messages.length - 1].content);
 protein-agent/
 ├── src/
 │   ├── agent/
-│   │   └── proteinAgent.js      # Main agent configuration
+│   │   └── proteinAgent.ts       # Main agent configuration
 │   ├── tools/
-│   │   └── proteinTools.js       # LangChain tools for recording and querying
+│   │   └── proteinTools.ts       # LangChain tools for recording and querying
 │   ├── storage/
-│   │   └── proteinStorage.js     # Data persistence layer (Prisma/PostgreSQL)
-│   └── index.js                  # Entry point
+│   │   └── proteinRepository.ts  # Data persistence layer (Prisma/PostgreSQL)
+│   ├── services/
+│   │   ├── contextService.ts     # Context aggregation service
+│   │   ├── userContextService.ts # User-related context
+│   │   └── proteinContextService.ts # Protein consumption context
+│   ├── types/
+│   │   └── protein.ts            # TypeScript type definitions
+│   ├── lib/
+│   │   └── prisma.ts             # Prisma client configuration
+│   ├── scripts/
+│   │   └── seedDev.ts            # Development database seeding
+│   ├── generated/
+│   │   └── prisma/               # Generated Prisma client (gitignored)
+│   └── index.ts                  # Entry point
 ├── prisma/
 │   └── schema.prisma             # Prisma schema definition
-├── data/                         # Legacy JSON data (no longer used)
-│   └── protein-consumption.json  # Old JSON storage (kept for reference)
-├── .env                          # Environment variables (create from .env.example)
+├── .env                          # Environment variables
+├── tsconfig.json                 # TypeScript configuration
+├── prisma.config.ts              # Prisma configuration
 ├── package.json
 └── README.md
 ```
@@ -163,37 +188,62 @@ protein-agent/
 ## How It Works
 
 1. **Input Processing**: The agent receives your meal description as text
-2. **Protein Estimation**: The LLM analyzes the description and estimates protein content based on:
+2. **Context Injection**: The agent automatically receives contextual information including:
+   - Today's date and consumption summary
+   - User's daily target and current progress
+   - Recent entries for today
+   - This context is injected into the system prompt to avoid unnecessary tool calls
+3. **Protein Estimation**: The LLM analyzes the description and estimates protein content based on:
    - Food items mentioned
    - Portion sizes (if specified)
+   - Explicit protein amounts (when provided by the user)
    - Common nutritional knowledge
-3. **Data Storage**: Protein intake is recorded with:
+4. **Data Storage**: Protein intake is recorded with:
+   - User ID (multi-user support)
    - Timestamp
    - Description
-   - Estimated protein amount
-   - Daily totals
-4. **Progress Tracking**: You can query your daily progress at any time
+   - Estimated or explicit protein amount
+   - Daily totals per user
+5. **Progress Tracking**: You can query your daily progress at any time, and the agent has immediate access to today's data without making tool calls
 
 ## Data Storage
 
-The project uses **PostgreSQL** with **Prisma ORM** for data persistence. The storage layer has been migrated from JSON file storage to a proper database.
+The project uses **PostgreSQL** with **Prisma ORM** for data persistence. The architecture follows a repository pattern with a services layer for context management.
 
 ### Database Schema
 
-The `ProteinEntry` model stores all protein consumption records:
+The database includes two main models:
 
-- `id`: Unique identifier (String)
+**User Model:**
+- `id`: Unique identifier (Int, auto-increment)
+- `name`: User's name (String)
+- `weight`: User's weight in kg (Float, optional)
+- `target`: Daily protein target in grams (Float, optional)
+- `phone`: Phone number for future integrations (String, optional)
+- `createdAt`: When the user was created (DateTime)
+- `updatedAt`: When the user was last updated (DateTime)
+
+**Protein Entry Model:**
+- `id`: Unique identifier (Int, auto-increment)
 - `proteinGrams`: Amount of protein in grams (Float)
 - `description`: Description of the meal (String)
 - `timestamp`: When the meal was consumed (DateTime)
 - `createdAt`: When the record was created (DateTime)
+- `userId`: Foreign key to User (Int)
 
 ### Prisma Commands
 
-- `npm run prisma:generate` - Generate Prisma Client
+- `npm run prisma:generate` - Generate Prisma Client (outputs to `src/generated/prisma`)
 - `npm run prisma:migrate` - Create and apply database migrations
 - `npm run prisma:migrate:deploy` - Deploy migrations (production)
 - `npm run prisma:studio` - Open Prisma Studio (database GUI)
+
+### Development Scripts
+
+- `npm start` - Run the agent in interactive mode (uses `tsx` to run TypeScript directly)
+- `npm run dev` - Run with watch mode for development
+- `npm run build` - Compile TypeScript to JavaScript
+- `npm run seed:dev` - Seed database with default user (development only)
 
 ## Future Enhancements
 
@@ -203,16 +253,19 @@ The `ProteinEntry` model stores all protein consumption records:
 - REST API endpoints
 - Web frontend
 - ~~Database integration (PostgreSQL/MongoDB)~~ ✅ **Done!**
-- Multi-user support
+- ~~Multi-user support~~ ✅ **Done!**
 - Meal suggestions based on remaining protein needs
+- User authentication and management
 
 ## Configuration
 
 Edit `.env` to customize:
 
 - `OPENAI_API_KEY`: Your OpenAI API key (required)
-- `USER_WEIGHT_KG`: Your weight in kg (default: 80)
-- `DAILY_PROTEIN_TARGET_G`: Daily protein goal in grams (default: 160)
+- `DATABASE_URL`: PostgreSQL connection string (required)
+- `USER_ID`: User ID to use for the session (default: 1)
+
+**Note:** User-specific settings (weight, target) are stored in the database and take precedence over environment variables. The `USER_ID` environment variable determines which user's data to access
 
 ## License
 
