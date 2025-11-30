@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createMockPrisma, createMockUser, createMockProteinEntry } from '../helpers/mocks.js';
-import type { PrismaClient } from '../../src/generated/prisma/client';
+import { createMockPrisma, createMockProteinEntry } from '../helpers/mocks.js';
 
 // Mock the prisma module
 vi.mock('../../src/lib/prisma.js', () => ({
@@ -72,6 +71,7 @@ describe('ProteinRepository', () => {
         userId,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.protein_entries.create).mockResolvedValue(mockEntry as any);
 
       const result = await proteinRepository.recordProtein(
@@ -108,6 +108,7 @@ describe('ProteinRepository', () => {
         userId,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.protein_entries.create).mockResolvedValue(mockEntry as any);
 
       await proteinRepository.recordProtein(userId, proteinGrams, description);
@@ -146,6 +147,7 @@ describe('ProteinRepository', () => {
         }),
       ];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.protein_entries.findMany).mockResolvedValue(mockEntries as any);
 
       const result = await proteinRepository.getDailyConsumption(userId, date);
@@ -201,12 +203,15 @@ describe('ProteinRepository', () => {
       vi.mocked(prisma.protein_entries.findMany)
         .mockResolvedValueOnce([
           createMockProteinEntry({ id: 1, proteinGrams: 30.0, timestamp: new Date('2024-01-15') }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ] as any)
         .mockResolvedValueOnce([
           createMockProteinEntry({ id: 2, proteinGrams: 40.0, timestamp: new Date('2024-01-16') }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ] as any)
         .mockResolvedValueOnce([
           createMockProteinEntry({ id: 3, proteinGrams: 50.0, timestamp: new Date('2024-01-17') }),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ] as any);
 
       const result = await proteinRepository.getRangeConsumption(userId, startDate, endDate);
@@ -243,6 +248,7 @@ describe('ProteinRepository', () => {
         }),
       ];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.protein_entries.findMany).mockResolvedValue(mockEntries as any);
 
       const result = await proteinRepository.getAllData(userId);
@@ -286,6 +292,7 @@ describe('ProteinRepository', () => {
         }),
       ];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.protein_entries.findMany).mockResolvedValue(mockEntries as any);
 
       const result = await proteinRepository.getAllEntries(userId);
@@ -315,7 +322,9 @@ describe('ProteinRepository', () => {
         userId,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.protein_entries.findFirst).mockResolvedValue(mockEntry as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.protein_entries.delete).mockResolvedValue(mockEntry as any);
       vi.mocked(prisma.protein_entries.findMany).mockResolvedValue([]);
 
@@ -349,7 +358,6 @@ describe('ProteinRepository', () => {
 
     it('should not allow deleting entries from other users', async () => {
       const userId = 1;
-      const otherUserId = 2;
       const entryId = 1;
 
       vi.mocked(prisma.protein_entries.findFirst).mockResolvedValue(null);

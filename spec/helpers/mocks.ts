@@ -49,7 +49,15 @@ export function createMockAgent() {
 /**
  * Create a mock user object
  */
-export function createMockUser(overrides?: Partial<any>) {
+export function createMockUser(overrides?: Partial<{
+  id: number;
+  name: string;
+  weight: number | null;
+  target: number | null;
+  phone: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}>) {
   return {
     id: 1,
     name: 'Test User',
@@ -65,7 +73,14 @@ export function createMockUser(overrides?: Partial<any>) {
 /**
  * Create a mock protein entry
  */
-export function createMockProteinEntry(overrides?: Partial<any>) {
+export function createMockProteinEntry(overrides?: Partial<{
+  id: number;
+  proteinGrams: number;
+  description: string;
+  timestamp: Date;
+  createdAt: Date;
+  userId: number;
+}>) {
   const now = new Date();
   return {
     id: 1,
@@ -81,7 +96,17 @@ export function createMockProteinEntry(overrides?: Partial<any>) {
 /**
  * Create a mock daily consumption object
  */
-export function createMockDailyConsumption(overrides?: Partial<any>) {
+export function createMockDailyConsumption(overrides?: Partial<{
+  date: string;
+  entries: Array<{
+    id: number;
+    proteinGrams: number;
+    description: string;
+    timestamp: string;
+    createdAt: string;
+  }>;
+  total: number;
+}>) {
   const now = new Date();
   const dateKey = now.toISOString().split('T')[0];
   return {

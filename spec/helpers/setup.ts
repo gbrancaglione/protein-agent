@@ -1,5 +1,4 @@
 import { vi } from 'vitest';
-import { createMockPrisma } from './mocks.js';
 
 /**
  * Setup function to be called before each test

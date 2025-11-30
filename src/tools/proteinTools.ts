@@ -22,7 +22,16 @@ export function createProteinTools(userId: number) {
       const user = await contextService.getUser(userId);
       const target = user.target;
       
-      const response: any = {
+      const response: {
+        success: boolean;
+        entry: {
+          proteinGrams: number;
+          description: string;
+          timestamp: string;
+        };
+        dailyTotal: number;
+        remaining?: number;
+      } = {
         success: true,
         entry: {
           proteinGrams: entry.proteinGrams,
@@ -67,7 +76,19 @@ export function createProteinTools(userId: number) {
       const user = await contextService.getUser(userId);
       const target = user.target;
       
-      const response: any = {
+      const response: {
+        date: string;
+        totalProtein: number;
+        entries: Array<{
+          id: number;
+          time: string;
+          protein: number;
+          description: string;
+        }>;
+        target?: number;
+        remaining?: number;
+        percentage?: string;
+      } = {
         date: daily.date,
         totalProtein: daily.total,
         entries: daily.entries.map(e => ({
@@ -124,7 +145,14 @@ export function createProteinTools(userId: number) {
         const dayData = allData[dateKey];
         totalAllTime += dayData.total;
         
-        const summary: any = {
+        const summary: {
+          date: string;
+          totalProtein: number;
+          target?: number;
+          remaining?: number;
+          percentage?: string;
+          entryCount: number;
+        } = {
           date: dateKey,
           totalProtein: dayData.total,
           entryCount: dayData.entries.length
@@ -144,7 +172,27 @@ export function createProteinTools(userId: number) {
       // Sort by date (most recent first)
       dailySummaries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
-      const response: any = {
+      const response: {
+        totalDays: number;
+        totalEntries: number;
+        totalAllTimeProtein: number;
+        dailySummaries: Array<{
+          date: string;
+          totalProtein: number;
+          target?: number;
+          remaining?: number;
+          percentage?: string;
+          entryCount: number;
+        }>;
+        recentEntries: Array<{
+          id: number;
+          date: string;
+          time: string;
+          protein: number;
+          description: string;
+        }>;
+        dailyTarget?: number;
+      } = {
         totalDays: Object.keys(allData).length,
         totalEntries: allEntries.length,
         totalAllTimeProtein: totalAllTime,
@@ -191,11 +239,18 @@ export function createProteinTools(userId: number) {
         const user = await contextService.getUser(userId);
         const target = user.target;
         
-        const response: any = {
+        const response: {
+          success: boolean;
+          message: string;
+          deletedEntry: NonNullable<typeof result.deletedEntry>;
+          updatedDailyTotal: number;
+          date: string;
+          remaining?: number;
+        } = {
           success: true,
           message: "Entrada deletada com sucesso",
           deletedEntry: result.deletedEntry,
-          updatedDailyTotal: result.newDailyTotal,
+          updatedDailyTotal: result.newDailyTotal ?? 0,
           date: result.deletedEntry.date
         };
         

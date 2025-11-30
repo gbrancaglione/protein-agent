@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createMockUser, createMockDailyConsumption } from '../helpers/mocks.js';
 
 // Mock LangChain
 vi.mock('langchain', () => ({
@@ -25,9 +24,14 @@ import { createProteinAgent } from '../../src/agent/proteinAgent.js';
 
 describe('ProteinAgent', () => {
   const userId = 1;
-  let mockModel: any;
-  let mockAgent: any;
-  let mockTools: any;
+  let mockModel: { invoke: ReturnType<typeof vi.fn>; stream: ReturnType<typeof vi.fn> };
+  let mockAgent: { invoke: ReturnType<typeof vi.fn>; stream: ReturnType<typeof vi.fn> };
+  let mockTools: {
+    recordProteinIntake: { name: string };
+    getDailyProteinSummary: { name: string };
+    getAllConsumption: { name: string };
+    deleteProteinEntry: { name: string };
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();

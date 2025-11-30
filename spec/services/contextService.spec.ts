@@ -58,6 +58,7 @@ describe('ContextService', () => {
       const userId = 1;
       const mockUser = createMockUser({ id: userId });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
 
       const result = await contextService.getUser(userId);
@@ -91,6 +92,7 @@ describe('ContextService', () => {
         ],
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
       vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
       vi.mocked(proteinContextService.formatEntryTime).mockReturnValue('12:00');
@@ -111,6 +113,7 @@ describe('ContextService', () => {
       const mockUser = createMockUser({ id: userId, target: null });
       const mockConsumption = createMockDailyConsumption({ total: 30.0, entries: [] });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
       vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
 
@@ -127,6 +130,7 @@ describe('ContextService', () => {
       const mockUser = createMockUser({ id: userId, weight: 75.5 });
       const mockConsumption = createMockDailyConsumption({ total: 0, entries: [] });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
       vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
 
@@ -140,6 +144,7 @@ describe('ContextService', () => {
       const mockUser = createMockUser({ id: userId });
       const mockConsumption = createMockDailyConsumption({ total: 0, entries: [] });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
       vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
 
@@ -153,6 +158,7 @@ describe('ContextService', () => {
       const mockUser = createMockUser({ id: userId, target: 200.0 });
       const mockConsumption = createMockDailyConsumption({ total: 100.0, entries: [] });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
       vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
 
@@ -166,6 +172,7 @@ describe('ContextService', () => {
       const mockUser = createMockUser({ id: userId, target: 160.0 });
       const mockConsumption = createMockDailyConsumption({ total: 0, entries: [] });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
       vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
 

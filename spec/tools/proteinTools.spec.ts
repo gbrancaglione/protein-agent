@@ -47,6 +47,7 @@ describe('ProteinTools', () => {
         createdAt: mockEntry.createdAt.toISOString(),
       });
       vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockDaily);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       const result = await tools.recordProteinIntake.invoke({
@@ -82,6 +83,7 @@ describe('ProteinTools', () => {
         createdAt: mockEntry.createdAt.toISOString(),
       });
       vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockDaily);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       await tools.recordProteinIntake.invoke({ proteinGrams });
@@ -109,6 +111,7 @@ describe('ProteinTools', () => {
         createdAt: mockEntry.createdAt.toISOString(),
       });
       vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockDaily);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       await tools.recordProteinIntake.invoke({ proteinGrams, timestamp });
@@ -135,6 +138,7 @@ describe('ProteinTools', () => {
         createdAt: mockEntry.createdAt.toISOString(),
       });
       vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockDaily);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       const result = await tools.recordProteinIntake.invoke({ proteinGrams });
@@ -171,6 +175,7 @@ describe('ProteinTools', () => {
       const mockUser = createMockUser({ target: 160.0 });
 
       vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockDaily);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       const result = await tools.getDailyProteinSummary.invoke({ date });
@@ -189,6 +194,7 @@ describe('ProteinTools', () => {
       const mockUser = createMockUser();
 
       vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockDaily);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       await tools.getDailyProteinSummary.invoke({});
@@ -204,6 +210,7 @@ describe('ProteinTools', () => {
       const mockUser = createMockUser({ target: null });
 
       vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockDaily);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       const result = await tools.getDailyProteinSummary.invoke({});
@@ -243,6 +250,7 @@ describe('ProteinTools', () => {
 
       vi.mocked(proteinRepository.getAllData).mockResolvedValue(mockAllData);
       vi.mocked(proteinRepository.getAllEntries).mockResolvedValue(mockAllEntries);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       const result = await tools.getAllConsumption.invoke({});
@@ -261,11 +269,19 @@ describe('ProteinTools', () => {
         '2024-01-15': createMockDailyConsumption({ date: '2024-01-15', total: 70.0 }),
         '2024-01-16': createMockDailyConsumption({ date: '2024-01-16', total: 50.0 }),
       };
-      const mockAllEntries: any[] = [];
+      const mockAllEntries: Array<{
+        id: number;
+        proteinGrams: number;
+        description: string;
+        timestamp: string;
+        createdAt: string;
+        date: string;
+      }> = [];
       const mockUser = createMockUser();
 
       vi.mocked(proteinRepository.getAllData).mockResolvedValue(mockAllData);
       vi.mocked(proteinRepository.getAllEntries).mockResolvedValue(mockAllEntries);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       const result = await tools.getAllConsumption.invoke({});
@@ -294,6 +310,7 @@ describe('ProteinTools', () => {
 
       vi.mocked(proteinRepository.deleteEntry).mockResolvedValue(mockDeletedEntry);
       vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockDaily);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(contextService.getUser).mockResolvedValue(mockUser as any);
 
       const result = await tools.deleteProteinEntry.invoke({ entryId });

@@ -19,6 +19,7 @@ describe('UserContextService', () => {
       const userId = 1;
       const mockUser = createMockUser({ id: userId });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any);
 
       const result = await userContextService.getUser(userId);
@@ -51,6 +52,7 @@ describe('UserContextService', () => {
         target: null,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any);
 
       const result = await userContextService.getUser(userId);
