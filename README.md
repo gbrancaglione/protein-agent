@@ -116,6 +116,26 @@ prisma/schema.prisma               # Database schema
 - `npm run prisma:studio` - Open Prisma Studio (database GUI)
 - `npm run seed:dev` - Seed database with default user
 
+## Testing
+
+The project includes comprehensive test coverage using Vitest. All tests are located in the `spec/` directory.
+
+### Running Tests
+
+```bash
+# Run all tests once
+npm test
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run tests with interactive UI
+npm run test:ui
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
 ## Configuration
 
 User-specific settings (weight, target) are stored in the database. The `USER_ID` environment variable determines which user's data to access (default: 1).
