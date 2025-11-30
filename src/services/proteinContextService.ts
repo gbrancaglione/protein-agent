@@ -1,4 +1,4 @@
-import proteinRepository from '../storage/proteinRepository.js';
+import proteinRepository from '../repositories/proteinRepository.js';
 import type { DailyConsumption } from '../types/protein.js';
 
 /**

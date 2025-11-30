@@ -99,7 +99,7 @@ console.log(response.messages[response.messages.length - 1].content);
 src/
 ├── agent/proteinAgent.ts          # Main agent configuration
 ├── tools/proteinTools.ts          # LangChain tools
-├── storage/proteinRepository.ts   # Data persistence layer
+├── repositories/proteinRepository.ts   # Data persistence layer
 ├── services/                      # Context management services
 ├── types/protein.ts               # TypeScript definitions
 └── index.ts                       # Entry point

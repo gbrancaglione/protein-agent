@@ -130,5 +130,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { createProteinAgent };
-export { default as proteinRepository } from './storage/proteinRepository.js';
+export { default as proteinRepository } from './repositories/proteinRepository.js';
 

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockUser, createMockProteinEntry, createMockDailyConsumption } from '../helpers/mocks.js';
 
 // Mock dependencies
-vi.mock('../../src/storage/proteinRepository.js', () => ({
+vi.mock('../../src/repositories/proteinRepository.js', () => ({
   default: {
     recordProtein: vi.fn(),
     getDailyConsumption: vi.fn(),
@@ -18,7 +18,7 @@ vi.mock('../../src/services/contextService.js', () => ({
   },
 }));
 
-import proteinRepository from '../../src/storage/proteinRepository.js';
+import proteinRepository from '../../src/repositories/proteinRepository.js';
 import contextService from '../../src/services/contextService.js';
 import { createProteinTools } from '../../src/tools/proteinTools.js';
 

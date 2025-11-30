@@ -7,7 +7,7 @@ vi.mock('../../src/lib/prisma.js', () => ({
 }));
 
 import { prisma } from '../../src/lib/prisma.js';
-import proteinRepository from '../../src/storage/proteinRepository.js';
+import proteinRepository from '../../src/repositories/proteinRepository.js';
 
 describe('ProteinRepository', () => {
   beforeEach(() => {

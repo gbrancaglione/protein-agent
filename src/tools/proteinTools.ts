@@ -1,6 +1,6 @@
 import { tool } from "langchain";
 import * as z from "zod";
-import proteinRepository from "../storage/proteinRepository.js";
+import proteinRepository from "../repositories/proteinRepository.js";
 import contextService from "../services/contextService.js";
 
 export function createProteinTools(userId: number) {
