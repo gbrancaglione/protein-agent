@@ -88,7 +88,7 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://protein_user:protein_password@postgres:5432/protein_agent?schema=public
-    command: npm run worker
+    command: npm run worker:dev
     depends_on:
       postgres:
         condition: service_healthy

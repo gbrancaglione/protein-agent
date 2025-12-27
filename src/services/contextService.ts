@@ -41,6 +41,16 @@ class ContextService {
   }
 
   /**
+   * Get user by phone number
+   * @param phone - Phone number
+   * @returns User object
+   * @throws Error if user is not found
+   */
+  async getUserByPhone(phone: string) {
+    return await userContextService.getUserByPhone(phone);
+  }
+
+  /**
    * Get formatted context string for injection into agent
    * This includes today's date and today's consumption summary
    * @param userId - User ID

@@ -22,6 +22,27 @@ class UserContextService {
 
     return user;
   }
+
+  /**
+   * Get user by phone number
+   * @param phone - Phone number (can be with or without @s.whatsapp.net suffix)
+   * @returns User object
+   * @throws Error if user is not found
+   */
+  async getUserByPhone(phone: string) {
+    // Extract just the phone number if it includes @s.whatsapp.net
+    const phoneNumber = phone.includes('@') ? phone.split('@')[0] : phone;
+
+    const user = await prisma.user.findFirst({
+      where: { phone: phoneNumber }
+    });
+
+    if (!user) {
+      throw new Error(`User with phone ${phoneNumber} not found`);
+    }
+
+    return user;
+  }
 }
 
 // Export singleton instance
