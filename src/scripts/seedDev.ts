@@ -30,6 +30,7 @@ async function seedDev() {
     const user = await prisma.user.create({
       data: {
         name: 'Gustavo',
+        phone: '5511998338955',
         weight: 80,
         target: 160
       }
