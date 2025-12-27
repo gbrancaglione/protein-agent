@@ -30,4 +30,3 @@ class ProteinContextService {
 
 // Export singleton instance
 export default new ProteinContextService();
-

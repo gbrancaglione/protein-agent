@@ -26,4 +26,3 @@ class UserContextService {
 
 // Export singleton instance
 export default new UserContextService();
-

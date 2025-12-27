@@ -73,7 +73,7 @@ class ContextService {
       context += `\nEntradas de hoje (${todayConsumption.entries.length}):\n`;
       todayConsumption.entries.forEach((entry, index) => {
         const time = proteinContextService.formatEntryTime(entry.timestamp);
-        context += `${index + 1}. ${time} - ${entry.proteinGrams}g de proteína (${entry.description})\n`;
+        context += `ID: ${entry.id} - ${time} - ${entry.proteinGrams}g de proteína (${entry.description})\n`;
       });
     } else {
       context += `\nNenhuma entrada registrada hoje ainda.\n`;

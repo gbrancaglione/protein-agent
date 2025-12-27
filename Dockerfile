@@ -15,6 +15,3 @@ COPY . .
 
 # Expose port (if needed in the future)
 EXPOSE 3000
-
-CMD ["npm", "run", "dev"]
-
