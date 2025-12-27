@@ -18,6 +18,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: protein-agent-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   app:
     build:
       context: .
@@ -40,6 +51,35 @@ services:
       - DATABASE_URL=postgresql://protein_user:protein_password@postgres:5432/protein_agent?schema=public
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: protein-agent-worker
+    env_file:
+      - .env
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./package.json:/app/package.json
+      # Exclude node_modules from volume mount (use container's node_modules)
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://protein_user:protein_password@postgres:5432/protein_agent?schema=public
+    command: npm run worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     stdin_open: true
     tty: true

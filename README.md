@@ -24,6 +24,7 @@ An AI-powered agent built with LangChain to help you track your daily protein in
 ```
 OPENAI_API_KEY=your-openai-api-key-here
 USER_ID=1  # Optional, defaults to 1
+REDIS_URL=redis://redis:6379  # Optional, defaults to redis:6379 for docker-compose
 ```
 
 2. Start the services:
