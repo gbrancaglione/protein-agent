@@ -13,5 +13,8 @@ COPY prisma ./prisma
 # Copy the rest of the application
 COPY . .
 
-# Expose port (if needed in the future)
+# Expose port
 EXPOSE 3000
+
+# Start the server
+CMD ["npm", "run", "server:dev"]
