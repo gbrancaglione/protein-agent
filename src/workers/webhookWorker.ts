@@ -3,6 +3,7 @@ import { connection } from '../lib/queue.js';
 import { createProteinAgent } from '../agent/proteinAgent.js';
 import { HumanMessage } from 'langchain';
 import contextService from '../services/contextService.js';
+import evolutionApiService from '../services/evolutionApiService.js';
 
 export interface WebhookJobData {
   body: unknown;
@@ -74,11 +75,29 @@ export const webhookWorker = new Worker<WebhookJobData>(
       });
 
       const lastMessage = response.messages[response.messages.length - 1];
-      const answer = lastMessage.content;
+      const answerContent = lastMessage.content;
+      
+      // Convert answer to string (content can be string or array)
+      const answer = typeof answerContent === 'string' 
+        ? answerContent 
+        : JSON.stringify(answerContent);
 
       console.log(`\n📱 Agent response for ${user.name}:`);
       console.log(answer);
       console.log('');
+
+      // Send response back to user via EvolutionAPI
+      try {
+        await evolutionApiService.sendTextMessage(phoneNumber, answer);
+        console.log(`✅ Response sent successfully to ${user.name}`);
+      } catch (sendError) {
+        const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
+        console.error(`❌ Failed to send response to ${user.name}:`, errorMessage);
+        if (sendError instanceof Error && sendError.stack) {
+          console.error(sendError.stack);
+        }
+        // Job processing succeeded, only message sending failed
+      }
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

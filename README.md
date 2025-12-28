@@ -10,6 +10,7 @@ OPENAI_API_KEY=your-openai-api-key-here
 USER_ID=1
 REDIS_URL=redis://redis:6379
 AUTHENTICATION_API_KEY=your-evolution-api-key-here
+EVOLUTION_API_BASE_URL=http://evolution-api:8080
 SERVER_URL=http://localhost:8080
 CACHE_REDIS_URI=redis://redis:6379/0
 DATABASE_ENABLED=true
