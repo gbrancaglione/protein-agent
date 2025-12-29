@@ -1,10 +1,11 @@
-import userContextService from './userContextService.js';
-import proteinContextService from './proteinContextService.js';
+import userRepository from '../repositories/userRepository.js';
+import proteinRepository from '../repositories/proteinRepository.js';
+import type { DailyConsumption } from '../types/protein.js';
 
 /**
  * Context Service for injecting contextual information into the agent
- * This service aggregates user and protein context to provide a unified
- * context interface. It avoids unnecessary tool calls for simple queries.
+ * This service provides business logic for aggregating user and protein context
+ * to provide a unified context interface. It avoids unnecessary tool calls for simple queries.
  */
 class ContextService {
   /**
@@ -22,12 +23,24 @@ class ContextService {
   }
 
   /**
+   * Format protein entry time for display
+   * @param timestamp - ISO timestamp string
+   * @returns Formatted time string
+   */
+  formatEntryTime(timestamp: string): string {
+    return new Date(timestamp).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  /**
    * Get today's protein consumption summary
    * @param userId - User ID
    * @returns Today's consumption data
    */
-  async getTodayConsumption(userId: number) {
-    return await proteinContextService.getTodayConsumption(userId);
+  async getTodayConsumption(userId: number): Promise<DailyConsumption> {
+    return await proteinRepository.getDailyConsumption(userId, new Date());
   }
 
   /**
@@ -37,7 +50,7 @@ class ContextService {
    * @throws Error if user is not found
    */
   async getUser(userId: number) {
-    return await userContextService.getUser(userId);
+    return await userRepository.getUser(userId);
   }
 
   /**
@@ -47,7 +60,7 @@ class ContextService {
    * @throws Error if user is not found
    */
   async getUserByPhone(phone: string) {
-    return await userContextService.getUserByPhone(phone);
+    return await userRepository.getUserByPhone(phone);
   }
 
   /**
@@ -81,8 +94,8 @@ class ContextService {
 
     if (todayConsumption.entries.length > 0) {
       context += `\nEntradas de hoje (${todayConsumption.entries.length}):\n`;
-      todayConsumption.entries.forEach((entry, index) => {
-        const time = proteinContextService.formatEntryTime(entry.timestamp);
+      todayConsumption.entries.forEach((entry) => {
+        const time = this.formatEntryTime(entry.timestamp);
         context += `ID: ${entry.id} - ${time} - ${entry.proteinGrams}g de proteína (${entry.description})\n`;
       });
     } else {

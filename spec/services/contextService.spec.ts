@@ -2,21 +2,21 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockUser, createMockDailyConsumption } from '../helpers/mocks.js';
 
 // Mock dependencies
-vi.mock('../../src/services/userContextService.js', () => ({
+vi.mock('../../src/repositories/userRepository.js', () => ({
   default: {
     getUser: vi.fn(),
+    getUserByPhone: vi.fn(),
   },
 }));
 
-vi.mock('../../src/services/proteinContextService.js', () => ({
+vi.mock('../../src/repositories/proteinRepository.js', () => ({
   default: {
-    getTodayConsumption: vi.fn(),
-    formatEntryTime: vi.fn(),
+    getDailyConsumption: vi.fn(),
   },
 }));
 
-import userContextService from '../../src/services/userContextService.js';
-import proteinContextService from '../../src/services/proteinContextService.js';
+import userRepository from '../../src/repositories/userRepository.js';
+import proteinRepository from '../../src/repositories/proteinRepository.js';
 import contextService from '../../src/services/contextService.js';
 
 describe('ContextService', () => {
@@ -39,31 +39,70 @@ describe('ContextService', () => {
     });
   });
 
+  describe('formatEntryTime', () => {
+    it('should format timestamp to time string', () => {
+      const timestamp = '2024-01-15T14:30:00Z';
+      const formatted = contextService.formatEntryTime(timestamp);
+
+      expect(formatted).toMatch(/^\d{2}:\d{2}$/);
+    });
+
+    it('should handle different timestamps', () => {
+      const timestamp1 = '2024-01-15T08:00:00Z';
+      const timestamp2 = '2024-01-15T20:45:00Z';
+
+      const formatted1 = contextService.formatEntryTime(timestamp1);
+      const formatted2 = contextService.formatEntryTime(timestamp2);
+
+      expect(formatted1).toMatch(/^\d{2}:\d{2}$/);
+      expect(formatted2).toMatch(/^\d{2}:\d{2}$/);
+      expect(formatted1).not.toBe(formatted2);
+    });
+  });
+
   describe('getTodayConsumption', () => {
-    it('should delegate to proteinContextService', async () => {
+    it('should call proteinRepository with userId and today\'s date', async () => {
       const userId = 1;
       const mockConsumption = createMockDailyConsumption();
 
-      vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
+      vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockConsumption);
 
       const result = await contextService.getTodayConsumption(userId);
 
-      expect(proteinContextService.getTodayConsumption).toHaveBeenCalledWith(userId);
+      expect(proteinRepository.getDailyConsumption).toHaveBeenCalledWith(
+        userId,
+        expect.any(Date)
+      );
       expect(result).toEqual(mockConsumption);
     });
   });
 
   describe('getUser', () => {
-    it('should delegate to userContextService', async () => {
+    it('should call userRepository with userId', async () => {
       const userId = 1;
       const mockUser = createMockUser({ id: userId });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
+      vi.mocked(userRepository.getUser).mockResolvedValue(mockUser as any);
 
       const result = await contextService.getUser(userId);
 
-      expect(userContextService.getUser).toHaveBeenCalledWith(userId);
+      expect(userRepository.getUser).toHaveBeenCalledWith(userId);
+      expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe('getUserByPhone', () => {
+    it('should call userRepository with phone number', async () => {
+      const phoneNumber = '5511999999999';
+      const mockUser = createMockUser({ id: 1, phone: phoneNumber });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(userRepository.getUserByPhone).mockResolvedValue(mockUser as any);
+
+      const result = await contextService.getUserByPhone(phoneNumber);
+
+      expect(userRepository.getUserByPhone).toHaveBeenCalledWith(phoneNumber);
       expect(result).toEqual(mockUser);
     });
   });
@@ -93,9 +132,8 @@ describe('ContextService', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
-      vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
-      vi.mocked(proteinContextService.formatEntryTime).mockReturnValue('12:00');
+      vi.mocked(userRepository.getUser).mockResolvedValue(mockUser as any);
+      vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockConsumption);
 
       const context = await contextService.getContextString(userId);
 
@@ -114,8 +152,8 @@ describe('ContextService', () => {
       const mockConsumption = createMockDailyConsumption({ total: 30.0, entries: [] });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
-      vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
+      vi.mocked(userRepository.getUser).mockResolvedValue(mockUser as any);
+      vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockConsumption);
 
       const context = await contextService.getContextString(userId);
 
@@ -131,8 +169,8 @@ describe('ContextService', () => {
       const mockConsumption = createMockDailyConsumption({ total: 0, entries: [] });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
-      vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
+      vi.mocked(userRepository.getUser).mockResolvedValue(mockUser as any);
+      vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockConsumption);
 
       const context = await contextService.getContextString(userId);
 
@@ -145,8 +183,8 @@ describe('ContextService', () => {
       const mockConsumption = createMockDailyConsumption({ total: 0, entries: [] });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
-      vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
+      vi.mocked(userRepository.getUser).mockResolvedValue(mockUser as any);
+      vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockConsumption);
 
       const context = await contextService.getContextString(userId);
 
@@ -159,8 +197,8 @@ describe('ContextService', () => {
       const mockConsumption = createMockDailyConsumption({ total: 100.0, entries: [] });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
-      vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
+      vi.mocked(userRepository.getUser).mockResolvedValue(mockUser as any);
+      vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockConsumption);
 
       const context = await contextService.getContextString(userId);
 
@@ -173,8 +211,8 @@ describe('ContextService', () => {
       const mockConsumption = createMockDailyConsumption({ total: 0, entries: [] });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(userContextService.getUser).mockResolvedValue(mockUser as any);
-      vi.mocked(proteinContextService.getTodayConsumption).mockResolvedValue(mockConsumption);
+      vi.mocked(userRepository.getUser).mockResolvedValue(mockUser as any);
+      vi.mocked(proteinRepository.getDailyConsumption).mockResolvedValue(mockConsumption);
 
       const context = await contextService.getContextString(userId);
 
