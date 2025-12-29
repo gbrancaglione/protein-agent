@@ -1,14 +1,12 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { webhookQueue } from './lib/queue.js';
-
-dotenv.config();
+import config from './config/index.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT;
 
 // Middleware to parse JSON bodies
 app.use(express.json());

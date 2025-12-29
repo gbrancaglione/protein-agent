@@ -3,10 +3,8 @@
   "version": "1.0.0",
   "description": "An AI agent to help track daily protein intake",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "src/server.ts",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "dev": "tsx watch src/index.ts",
     "server": "tsx src/server.ts",
     "server:dev": "tsx watch src/server.ts",
     "build": "tsc",

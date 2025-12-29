@@ -1,7 +1,5 @@
-import dotenv from 'dotenv';
 import { prisma } from '../lib/prisma.js';
-
-dotenv.config();
+import { isProduction } from '../config/index.js';
 
 /**
  * Seed script for development environment
@@ -10,7 +8,7 @@ dotenv.config();
  */
 async function seedDev() {
   // Only run in development
-  if (process.env.NODE_ENV === 'production') {
+  if (isProduction()) {
     console.log('⚠️  Seed script skipped: NODE_ENV is production');
     return;
   }

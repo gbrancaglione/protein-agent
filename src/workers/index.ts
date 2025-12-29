@@ -1,7 +1,5 @@
-import dotenv from 'dotenv';
 import { webhookWorker } from './webhookWorker.js';
-
-dotenv.config();
+import '../config/index.js'; // Ensure config is loaded and validated
 
 console.log('🚀 Workers started');
 console.log('📡 Webhook worker is listening for jobs...');

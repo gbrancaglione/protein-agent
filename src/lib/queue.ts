@@ -1,20 +1,19 @@
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import config from '../config/index.js';
 
 // Create Redis connection
 export function createRedisConnection(): IORedis {
-  const redisUrl = process.env.REDIS_URL;
-  
-  if (redisUrl) {
-    return new IORedis(redisUrl, {
+  if (config.REDIS_URL) {
+    return new IORedis(config.REDIS_URL, {
       maxRetriesPerRequest: null,
     });
   }
   
   // Default connection for docker-compose (redis service)
   return new IORedis({
-    host: process.env.REDIS_HOST || 'redis',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    host: config.REDIS_HOST,
+    port: config.REDIS_PORT,
     maxRetriesPerRequest: null,
   });
 }

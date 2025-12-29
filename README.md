@@ -7,15 +7,11 @@ AI agent that tracks daily protein intake from natural language meal description
 1. Create `.env` file:
 ```
 OPENAI_API_KEY=your-openai-api-key-here
-USER_ID=1
+DATABASE_URL=postgresql://protein_user:protein_password@postgres:5432/protein_agent
 REDIS_URL=redis://redis:6379
 AUTHENTICATION_API_KEY=your-evolution-api-key-here
 EVOLUTION_API_BASE_URL=http://evolution-api:8080
 SERVER_URL=http://localhost:8080
-CACHE_REDIS_URI=redis://redis:6379/0
-DATABASE_ENABLED=true
-DATABASE_PROVIDER=postgresql
-DATABASE_CONNECTION_URI=postgresql://protein_user:protein_password@postgres:5432/protein_agent
 WEBHOOK_GLOBAL_URL=http://app:3000/webhooks
 ```
 
@@ -33,18 +29,23 @@ docker exec -it protein-agent-app npm run seed:dev
 
 ## Usage
 
-Interactive mode:
+Start the server:
 ```bash
-docker exec -it protein-agent-app npm start
+docker exec -it protein-agent-app npm run server
 ```
 
-Single command:
+Start the worker (in a separate terminal):
 ```bash
-docker exec -it protein-agent-app npm start "I had 200g of chicken breast"
+docker exec -it protein-agent-worker npm run worker
 ```
+
+Or use docker-compose which starts both automatically.
 
 ## Commands
 
-- `npm start` - Interactive mode
+- `npm run server` - Start the webhook server
+- `npm run server:dev` - Start the server in watch mode
+- `npm run worker` - Start the webhook worker
+- `npm run worker:dev` - Start the worker in watch mode
 - `npm test` - Run tests
 - `npm run seed:dev` - Seed database

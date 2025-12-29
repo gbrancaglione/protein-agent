@@ -1,3 +1,5 @@
+import config from '../config/index.js';
+
 /**
  * EvolutionAPI Service
  * Handles sending WhatsApp messages via EvolutionAPI
@@ -5,13 +7,12 @@
 class EvolutionApiService {
   private baseUrl: string;
   private apiKey: string;
-  private instanceName: string = 'protein';
+  private instanceName: string;
 
   constructor() {
-    // Hardcoded for Docker environment - uses Docker service name
-    this.baseUrl = 'http://evolution-api:8080';
-    
-    this.apiKey = process.env.AUTHENTICATION_API_KEY || '';
+    this.baseUrl = config.EVOLUTION_API_BASE_URL;
+    this.apiKey = config.AUTHENTICATION_API_KEY || '';
+    this.instanceName = config.EVOLUTION_API_INSTANCE_NAME;
     
     if (!this.apiKey) {
       console.warn('Warning: AUTHENTICATION_API_KEY is not set. Message sending will fail.');
