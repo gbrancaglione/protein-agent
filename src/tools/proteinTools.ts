@@ -2,6 +2,8 @@ import { tool } from "langchain";
 import * as z from "zod";
 import proteinRepository from "../repositories/proteinRepository.js";
 import contextService from "../services/contextService.js";
+import { ValidationError, NotFoundError } from "../errors/index.js";
+import { logger } from "../lib/logger.js";
 
 export function createProteinTools(userId: number) {
   const recordProteinIntake = tool(
@@ -225,16 +227,21 @@ export function createProteinTools(userId: number) {
 
   const deleteProteinEntry = tool(
     async ({ entryId }: { entryId: number }) => {
-      if (!entryId) {
-        return JSON.stringify({
-          success: false,
-          error: "ID da entrada é obrigatório"
-        }, null, 2);
-      }
-      
-      const result = await proteinRepository.deleteEntry(userId, entryId);
-      
-      if (result.success && result.deletedEntry) {
+      try {
+        if (!entryId) {
+          throw new ValidationError("ID da entrada é obrigatório", "entryId", entryId);
+        }
+        
+        const result = await proteinRepository.deleteEntry(userId, entryId);
+        
+        if (!result.success || !result.deletedEntry) {
+          // This shouldn't happen with new error handling, but handle gracefully
+          return JSON.stringify({
+            success: false,
+            error: "Falha ao deletar entrada"
+          }, null, 2);
+        }
+        
         const daily = await proteinRepository.getDailyConsumption(userId, new Date(result.deletedEntry.date));
         const user = await contextService.getUser(userId);
         const target = user.target;
@@ -259,8 +266,28 @@ export function createProteinTools(userId: number) {
         }
         
         return JSON.stringify(response, null, 2);
-      } else {
-        return JSON.stringify(result, null, 2);
+      } catch (error) {
+        logger.error({ error, userId, entryId, operation: 'deleteProteinEntry' }, 'Error in deleteProteinEntry tool');
+        
+        if (error instanceof ValidationError) {
+          return JSON.stringify({
+            success: false,
+            error: error.message
+          }, null, 2);
+        }
+        
+        if (error instanceof NotFoundError) {
+          return JSON.stringify({
+            success: false,
+            error: error.message
+          }, null, 2);
+        }
+        
+        // For other errors, return a generic error message
+        return JSON.stringify({
+          success: false,
+          error: "Erro ao deletar entrada. Por favor, tente novamente."
+        }, null, 2);
       }
     },
     {

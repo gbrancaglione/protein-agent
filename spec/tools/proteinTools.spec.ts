@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockUser, createMockProteinEntry, createMockDailyConsumption } from '../helpers/mocks.js';
+import { NotFoundError } from '../../src/errors/index.js';
 
 // Mock dependencies
 vi.mock('../../src/repositories/proteinRepository.js', () => ({
@@ -15,6 +16,16 @@ vi.mock('../../src/repositories/proteinRepository.js', () => ({
 vi.mock('../../src/services/contextService.js', () => ({
   default: {
     getUser: vi.fn(),
+  },
+}));
+
+// Mock the logger
+vi.mock('../../src/lib/logger.js', () => ({
+  logger: {
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 
@@ -326,12 +337,10 @@ describe('ProteinTools', () => {
 
     it('should return error when entry not found', async () => {
       const entryId = 999;
-      const mockResult = {
-        success: false,
-        error: 'Entry with ID 999 not found',
-      };
 
-      vi.mocked(proteinRepository.deleteEntry).mockResolvedValue(mockResult);
+      vi.mocked(proteinRepository.deleteEntry).mockRejectedValue(
+        new NotFoundError('Protein entry', entryId)
+      );
 
       const result = await tools.deleteProteinEntry.invoke({ entryId });
 

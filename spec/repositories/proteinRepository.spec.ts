@@ -1,9 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockPrisma, createMockProteinEntry } from '../helpers/mocks.js';
+import { NotFoundError } from '../../src/errors/index.js';
 
 // Mock the prisma module
 vi.mock('../../src/lib/prisma.js', () => ({
   prisma: createMockPrisma(),
+}));
+
+// Mock the logger
+vi.mock('../../src/lib/logger.js', () => ({
+  logger: {
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+  },
 }));
 
 import { prisma } from '../../src/lib/prisma.js';
@@ -343,16 +354,13 @@ describe('ProteinRepository', () => {
       expect(result.newDailyTotal).toBe(0);
     });
 
-    it('should return error when entry not found', async () => {
+    it('should throw NotFoundError when entry not found', async () => {
       const userId = 1;
       const entryId = 999;
 
       vi.mocked(prisma.protein_entries.findFirst).mockResolvedValue(null);
 
-      const result = await proteinRepository.deleteEntry(userId, entryId);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('not found');
+      await expect(proteinRepository.deleteEntry(userId, entryId)).rejects.toThrow(NotFoundError);
       expect(prisma.protein_entries.delete).not.toHaveBeenCalled();
     });
 
@@ -362,9 +370,7 @@ describe('ProteinRepository', () => {
 
       vi.mocked(prisma.protein_entries.findFirst).mockResolvedValue(null);
 
-      const result = await proteinRepository.deleteEntry(userId, entryId);
-
-      expect(result.success).toBe(false);
+      await expect(proteinRepository.deleteEntry(userId, entryId)).rejects.toThrow(NotFoundError);
       expect(prisma.protein_entries.delete).not.toHaveBeenCalled();
     });
   });

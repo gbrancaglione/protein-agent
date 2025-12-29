@@ -1,5 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import type { DayBounds, ProteinEntry, DailyConsumption, DeleteResult } from '../types/protein.js';
+import { NotFoundError, DatabaseError } from '../errors/index.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Protein Repository
@@ -35,6 +37,7 @@ class ProteinRepository {
    * @param description - Description of the meal
    * @param timestamp - When the meal was consumed
    * @returns The recorded entry
+   * @throws DatabaseError if database operation fails
    */
   async recordProtein(
     userId: number,
@@ -42,24 +45,33 @@ class ProteinRepository {
     description: string,
     timestamp: Date = new Date()
   ): Promise<ProteinEntry> {
-    const entry = await prisma.protein_entries.create({
-      data: {
-        proteinGrams,
-        description,
-        timestamp: new Date(timestamp),
-        createdAt: new Date(),
-        userId
-      }
-    });
+    try {
+      const entry = await prisma.protein_entries.create({
+        data: {
+          proteinGrams,
+          description,
+          timestamp: new Date(timestamp),
+          createdAt: new Date(),
+          userId
+        }
+      });
 
-    // Return in the same format as before for compatibility
-    return {
-      id: entry.id,
-      proteinGrams: entry.proteinGrams,
-      description: entry.description,
-      timestamp: entry.timestamp.toISOString(),
-      createdAt: entry.createdAt.toISOString()
-    };
+      // Return in the same format as before for compatibility
+      return {
+        id: entry.id,
+        proteinGrams: entry.proteinGrams,
+        description: entry.description,
+        timestamp: entry.timestamp.toISOString(),
+        createdAt: entry.createdAt.toISOString()
+      };
+    } catch (error) {
+      logger.error({ error, userId, proteinGrams, operation: 'recordProtein' }, 'Database error in recordProtein');
+      throw new DatabaseError(
+        `Failed to record protein entry for user ${userId}`,
+        'recordProtein',
+        { userId, proteinGrams, originalError: error instanceof Error ? error.message : String(error) }
+      );
+    }
   }
 
   /**
@@ -167,6 +179,8 @@ class ProteinRepository {
    * @param userId - User ID
    * @param entryId - The ID of the entry to delete
    * @returns Result object with success status and deleted entry info
+   * @throws NotFoundError if entry is not found
+   * @throws DatabaseError if database operation fails
    */
   async deleteEntry(userId: number, entryId: number): Promise<DeleteResult> {
     try {
@@ -178,10 +192,7 @@ class ProteinRepository {
       });
 
       if (!entry) {
-        return {
-          success: false,
-          error: `Entry with ID ${entryId} not found`
-        };
+        throw new NotFoundError('Protein entry', entryId, { userId });
       }
 
       const dateKey = this.getDateKey(entry.timestamp);
@@ -204,15 +215,24 @@ class ProteinRepository {
         },
         newDailyTotal: daily.total
       };
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
-        // Prisma record not found
-        return {
-          success: false,
-          error: `Entry with ID ${entryId} not found`
-        };
+    } catch (error) {
+      // Re-throw if it's already our custom error
+      if (error instanceof NotFoundError) {
+        throw error;
       }
-      throw error;
+      
+      // Handle Prisma record not found error
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+        throw new NotFoundError('Protein entry', entryId, { userId });
+      }
+      
+      // Wrap other errors in DatabaseError
+      logger.error({ error, userId, entryId, operation: 'deleteEntry' }, 'Database error in deleteEntry');
+      throw new DatabaseError(
+        `Failed to delete protein entry ${entryId} for user ${userId}`,
+        'deleteEntry',
+        { userId, entryId, originalError: error instanceof Error ? error.message : String(error) }
+      );
     }
   }
 

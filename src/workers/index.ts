@@ -1,12 +1,13 @@
 import { webhookWorker } from './webhookWorker.js';
 import '../config/index.js'; // Ensure config is loaded and validated
+import { logger } from '../lib/logger.js';
 
-console.log('🚀 Workers started');
-console.log('📡 Webhook worker is listening for jobs...');
+logger.info({}, 'Workers started');
+logger.info({}, 'Webhook worker is listening for jobs...');
 
 // Graceful shutdown - handles all workers in one place
 async function shutdown(signal: string) {
-  console.log(`${signal} received, closing workers...`);
+  logger.info({ signal }, 'Shutdown signal received, closing workers...');
   await webhookWorker.close();
   process.exit(0);
 }

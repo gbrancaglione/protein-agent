@@ -4,6 +4,8 @@ import { createProteinAgent } from '../agent/proteinAgent.js';
 import { HumanMessage } from 'langchain';
 import contextService from '../services/contextService.js';
 import evolutionApiService from '../services/evolutionApiService.js';
+import { logError, logger } from '../lib/logger.js';
+import { UserNotFoundError, ApiError } from '../errors/index.js';
 
 export interface WebhookJobData {
   body: unknown;
@@ -37,37 +39,47 @@ export const webhookWorker = new Worker<WebhookJobData>(
       
       // Only process messages.upsert events
       if (webhookData.event !== 'messages.upsert') {
-        console.log(`Skipping event: ${webhookData.event}`);
+        logger.debug({ event: webhookData.event, jobId: job.id }, 'Skipping non-message event');
         return;
       }
 
       // Extract phone number from remoteJid
       const remoteJid = webhookData.data?.key?.remoteJid;
       if (!remoteJid) {
-        console.error('No remoteJid found in webhook data');
+        logger.warn({ jobId: job.id, webhookData }, 'No remoteJid found in webhook data');
         return;
       }
 
       // Extract phone number (remove @s.whatsapp.net suffix)
       const phoneNumber = remoteJid.includes('@') ? remoteJid.split('@')[0] : remoteJid;
-      console.log(`Processing message from phone: ${phoneNumber}`);
+      logger.info({ phoneNumber, jobId: job.id }, 'Processing message from phone');
 
       // Get user by phone number
-      const user = await contextService.getUserByPhone(phoneNumber);
-      console.log(`Found user: ${user.name} (ID: ${user.id})`);
+      let user;
+      try {
+        user = await contextService.getUserByPhone(phoneNumber);
+        logger.info({ userId: user.id, userName: user.name, jobId: job.id }, 'Found user');
+      } catch (error) {
+        if (error instanceof UserNotFoundError) {
+          logger.warn({ phoneNumber, jobId: job.id }, 'User not found for phone number');
+          // Don't fail the job if user doesn't exist, just skip processing
+          return;
+        }
+        throw error;
+      }
 
       // Extract message text
       const messageText = webhookData.data?.message?.conversation;
       if (!messageText) {
-        console.log('No conversation message found, skipping');
+        logger.debug({ jobId: job.id }, 'No conversation message found, skipping');
         return;
       }
 
-      console.log(`Message from ${user.name}: ${messageText}`);
+      logger.info({ userId: user.id, userName: user.name, messageText, jobId: job.id }, 'Message received');
 
       // Create agent with user context
       const agent = await createProteinAgent(user.id);
-      console.log('Agent created, processing message...');
+      logger.debug({ userId: user.id, jobId: job.id }, 'Agent created, processing message');
 
       // Process message
       const response = await agent.invoke({
@@ -82,29 +94,37 @@ export const webhookWorker = new Worker<WebhookJobData>(
         ? answerContent 
         : JSON.stringify(answerContent);
 
-      console.log(`\n📱 Agent response for ${user.name}:`);
-      console.log(answer);
-      console.log('');
+      logger.info({
+        userId: user.id,
+        userName: user.name,
+        answer,
+        jobId: job.id,
+      }, 'Agent response generated');
 
       // Send response back to user via EvolutionAPI
       try {
         await evolutionApiService.sendTextMessage(phoneNumber, answer);
-        console.log(`✅ Response sent successfully to ${user.name}`);
+        logger.info({ userId: user.id, userName: user.name, jobId: job.id }, 'Response sent successfully');
       } catch (sendError) {
-        const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
-        console.error(`❌ Failed to send response to ${user.name}:`, errorMessage);
-        if (sendError instanceof Error && sendError.stack) {
-          console.error(sendError.stack);
-        }
+        // Log the error but don't fail the job - message processing succeeded
+        logError(
+          sendError instanceof Error ? sendError : new Error(String(sendError)),
+          {
+            userId: user.id,
+            userName: user.name,
+            phoneNumber,
+            jobId: job.id,
+            operation: 'sendTextMessage',
+          }
+        );
         // Job processing succeeded, only message sending failed
       }
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error processing webhook job ${job.id}:`, errorMessage);
-      if (error instanceof Error && error.stack) {
-        console.error(error.stack);
-      }
+      logError(
+        error instanceof Error ? error : new Error(String(error)),
+        { jobId: job.id, operation: 'webhookProcessing' }
+      );
       // Re-throw to mark job as failed
       throw error;
     }
@@ -116,10 +136,10 @@ export const webhookWorker = new Worker<WebhookJobData>(
 
 // Handle worker events
 webhookWorker.on('completed', (job: Job<WebhookJobData>) => {
-  console.log(`Webhook job ${job.id} completed`);
+  logger.info({ jobId: job.id }, 'Webhook job completed');
 });
 
 webhookWorker.on('failed', (job: Job<WebhookJobData> | undefined, err: Error) => {
-  console.error(`Webhook job ${job?.id} failed:`, err);
+  logError(err, { jobId: job?.id, operation: 'webhookJob' });
 });
 

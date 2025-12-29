@@ -1,5 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { isProduction } from '../config/index.js';
+import { logger, logError } from '../lib/logger.js';
+import { DatabaseError } from '../errors/index.js';
 
 /**
  * Seed script for development environment
@@ -9,7 +11,7 @@ import { isProduction } from '../config/index.js';
 async function seedDev() {
   // Only run in development
   if (isProduction()) {
-    console.log('⚠️  Seed script skipped: NODE_ENV is production');
+    logger.warn({}, 'Seed script skipped: NODE_ENV is production');
     return;
   }
 
@@ -20,7 +22,7 @@ async function seedDev() {
     });
 
     if (existingUser) {
-      console.log('✅ User "Gustavo" already exists (ID:', existingUser.id, ')');
+      logger.info({ userId: existingUser.id }, 'User "Gustavo" already exists');
       return;
     }
 
@@ -34,14 +36,22 @@ async function seedDev() {
       }
     });
 
-    console.log('✅ Created default user:');
-    console.log('   Name:', user.name);
-    console.log('   ID:', user.id);
-    console.log('   Weight:', user.weight, 'kg');
-    console.log('   Target:', user.target, 'g');
+    logger.info({
+      userId: user.id,
+      name: user.name,
+      weight: user.weight,
+      target: user.target,
+    }, 'Created default user');
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
-    throw error;
+    logError(
+      error instanceof Error ? error : new Error(String(error)),
+      { operation: 'seedDev' }
+    );
+    throw new DatabaseError(
+      'Failed to seed database',
+      'seedDev',
+      { originalError: error instanceof Error ? error.message : String(error) }
+    );
   } finally {
     await prisma.$disconnect();
   }
@@ -51,11 +61,14 @@ async function seedDev() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   seedDev()
     .then(() => {
-      console.log('✅ Seed completed');
+      logger.info({}, 'Seed completed');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Seed failed:', error);
+      logError(
+        error instanceof Error ? error : new Error(String(error)),
+        { operation: 'seedDev' }
+      );
       process.exit(1);
     });
 }

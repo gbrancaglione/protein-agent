@@ -1,4 +1,6 @@
 import { prisma } from '../lib/prisma.js';
+import { UserNotFoundError, DatabaseError } from '../errors/index.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * User Repository
@@ -14,39 +16,71 @@ class UserRepository {
    * Get user by ID
    * @param userId - User ID
    * @returns User object
-   * @throws Error if user is not found
+   * @throws UserNotFoundError if user is not found
+   * @throws DatabaseError if database operation fails
    */
   async getUser(userId: number) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
 
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
+      if (!user) {
+        throw new UserNotFoundError(userId);
+      }
+
+      return user;
+    } catch (error) {
+      // Re-throw if it's already our custom error
+      if (error instanceof UserNotFoundError) {
+        throw error;
+      }
+      
+      // Wrap Prisma errors in DatabaseError
+      logger.error({ error, userId, operation: 'getUser' }, 'Database error in getUser');
+      throw new DatabaseError(
+        `Failed to get user with ID ${userId}`,
+        'getUser',
+        { userId, originalError: error instanceof Error ? error.message : String(error) }
+      );
     }
-
-    return user;
   }
 
   /**
    * Get user by phone number
    * @param phone - Phone number (can be with or without @s.whatsapp.net suffix)
    * @returns User object
-   * @throws Error if user is not found
+   * @throws UserNotFoundError if user is not found
+   * @throws DatabaseError if database operation fails
    */
   async getUserByPhone(phone: string) {
-    // Extract just the phone number if it includes @s.whatsapp.net
-    const phoneNumber = phone.includes('@') ? phone.split('@')[0] : phone;
+    try {
+      // Extract just the phone number if it includes @s.whatsapp.net
+      const phoneNumber = phone.includes('@') ? phone.split('@')[0] : phone;
 
-    const user = await prisma.user.findFirst({
-      where: { phone: phoneNumber }
-    });
+      const user = await prisma.user.findFirst({
+        where: { phone: phoneNumber }
+      });
 
-    if (!user) {
-      throw new Error(`User with phone ${phoneNumber} not found`);
+      if (!user) {
+        throw new UserNotFoundError(phoneNumber);
+      }
+
+      return user;
+    } catch (error) {
+      // Re-throw if it's already our custom error
+      if (error instanceof UserNotFoundError) {
+        throw error;
+      }
+      
+      // Wrap Prisma errors in DatabaseError
+      logger.error({ error, phone, operation: 'getUserByPhone' }, 'Database error in getUserByPhone');
+      throw new DatabaseError(
+        `Failed to get user with phone ${phone}`,
+        'getUserByPhone',
+        { phone, originalError: error instanceof Error ? error.message : String(error) }
+      );
     }
-
-    return user;
   }
 }
 

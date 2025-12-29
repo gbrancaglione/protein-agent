@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import { ConfigurationError } from '../errors/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -75,9 +76,17 @@ try {
       return `  - ${path}: ${err.message}`;
     });
     
+    const configError = new ConfigurationError(
+      `Configuration validation failed: ${errorMessages.join('; ')}`,
+      undefined,
+      { validationErrors: error.errors }
+    );
+    
+    // Use console.error here since logger depends on config
     console.error('❌ Configuration validation failed:');
     console.error(errorMessages.join('\n'));
     console.error('\nPlease check your .env file and ensure all required variables are set.');
+    console.error('Error details:', configError.toJSON());
     process.exit(1);
   }
   throw error;

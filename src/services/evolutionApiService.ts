@@ -1,4 +1,6 @@
 import config from '../config/index.js';
+import { ValidationError, ApiError, ConfigurationError } from '../errors/index.js';
+import { logger, logWarning } from '../lib/logger.js';
 
 /**
  * EvolutionAPI Service
@@ -15,22 +17,30 @@ class EvolutionApiService {
     this.instanceName = config.EVOLUTION_API_INSTANCE_NAME;
     
     if (!this.apiKey) {
-      console.warn('Warning: AUTHENTICATION_API_KEY is not set. Message sending will fail.');
+      logWarning('AUTHENTICATION_API_KEY is not set. Message sending will fail.', {
+        service: 'EvolutionApiService',
+      });
     }
     
-    console.log(`EvolutionAPI Service initialized with baseUrl: ${this.baseUrl}`);
+    logger.info({
+      service: 'EvolutionApiService',
+      baseUrl: this.baseUrl,
+      instanceName: this.instanceName,
+    }, 'EvolutionAPI Service initialized');
   }
 
   /**
    * Send a text message via EvolutionAPI
    * @param phoneNumber - Phone number (with country code, e.g., "5511998338955")
    * @param text - Message text to send
-   * @throws Error if phone number is invalid, text is empty, or API request fails
+   * @throws ValidationError if phone number or text is invalid
+   * @throws ConfigurationError if API key is not configured
+   * @throws ApiError if API request fails
    */
   async sendTextMessage(phoneNumber: string, text: string): Promise<void> {
     // Validate inputs
     if (!phoneNumber || phoneNumber.trim().length === 0) {
-      throw new Error('Phone number is required');
+      throw new ValidationError('Phone number is required', 'phoneNumber', phoneNumber);
     }
 
     // Remove any @s.whatsapp.net suffix if present
@@ -40,20 +50,31 @@ class EvolutionApiService {
 
     // Basic phone number validation (should be numeric)
     if (!/^\d+$/.test(cleanPhoneNumber)) {
-      throw new Error(`Invalid phone number format: ${cleanPhoneNumber}`);
+      throw new ValidationError(
+        `Invalid phone number format: ${cleanPhoneNumber}`,
+        'phoneNumber',
+        cleanPhoneNumber
+      );
     }
 
     if (!text || text.trim().length === 0) {
-      throw new Error('Message text cannot be empty');
+      throw new ValidationError('Message text cannot be empty', 'text', text);
     }
 
     if (!this.apiKey) {
-      throw new Error('AUTHENTICATION_API_KEY is not configured');
+      throw new ConfigurationError(
+        'AUTHENTICATION_API_KEY is not configured',
+        'AUTHENTICATION_API_KEY'
+      );
     }
 
     const url = `${this.baseUrl}/message/sendText/${this.instanceName}`;
     
-    console.log(`Attempting to send message to ${cleanPhoneNumber} via ${url}`);
+    logger.debug({
+      phoneNumber: cleanPhoneNumber,
+      url,
+      service: 'EvolutionApiService',
+    }, 'Attempting to send message');
     
     try {
       // Add timeout to fetch request (30 seconds)
@@ -77,33 +98,64 @@ class EvolutionApiService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `EvolutionAPI request failed: ${response.status} ${response.statusText}. ${errorText}`
+        logger.error({
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+          phoneNumber: cleanPhoneNumber,
+          url,
+        }, 'EvolutionAPI request failed');
+        
+        throw new ApiError(
+          `EvolutionAPI request failed: ${response.status} ${response.statusText}`,
+          'EvolutionAPI',
+          response.status,
+          errorText,
+          { phoneNumber: cleanPhoneNumber, url }
         );
       }
 
       const responseData = await response.json();
-      console.log(`✅ Message sent successfully to ${cleanPhoneNumber}`);
-      
-      // Log response if it contains useful information
-      if (responseData && typeof responseData === 'object') {
-        console.log(`Response:`, JSON.stringify(responseData, null, 2));
-      }
+      logger.info({
+        phoneNumber: cleanPhoneNumber,
+        responseData,
+      }, 'Message sent successfully');
     } catch (error) {
+      // Re-throw if it's already our custom error
+      if (error instanceof ApiError || error instanceof ValidationError || error instanceof ConfigurationError) {
+        throw error;
+      }
+      
       if (error instanceof Error) {
-        // Provide more detailed error information
-        let errorDetails = error.message;
+        let errorMessage = error.message;
+        let statusCode: number | undefined;
         
         // Check for specific error types
         if (error.name === 'AbortError') {
-          errorDetails = `Request timeout after 30 seconds to ${url}`;
+          errorMessage = `Request timeout after 30 seconds to ${url}`;
+          statusCode = 504;
         } else if (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED')) {
-          errorDetails = `Connection failed to ${url}. Is EvolutionAPI running and accessible? Error: ${error.message}`;
+          errorMessage = `Connection failed to ${url}. Is EvolutionAPI running and accessible?`;
+          statusCode = 503;
         } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
-          errorDetails = `DNS resolution failed for EvolutionAPI. Check if the service name 'evolution-api' is correct. Error: ${error.message}`;
+          errorMessage = `DNS resolution failed for EvolutionAPI. Check if the service name 'evolution-api' is correct.`;
+          statusCode = 503;
         }
         
-        throw new Error(`Failed to send message via EvolutionAPI: ${errorDetails}`);
+        logger.error({
+          error: error.message,
+          errorName: error.name,
+          phoneNumber: cleanPhoneNumber,
+          url,
+        }, 'Failed to send message via EvolutionAPI');
+        
+        throw new ApiError(
+          errorMessage,
+          'EvolutionAPI',
+          statusCode,
+          undefined,
+          { phoneNumber: cleanPhoneNumber, url, originalError: error.message }
+        );
       }
       throw error;
     }

@@ -47,7 +47,8 @@ class ContextService {
    * Get user by ID
    * @param userId - User ID
    * @returns User object
-   * @throws Error if user is not found
+   * @throws UserNotFoundError if user is not found
+   * @throws DatabaseError if database operation fails
    */
   async getUser(userId: number) {
     return await userRepository.getUser(userId);
@@ -57,7 +58,8 @@ class ContextService {
    * Get user by phone number
    * @param phone - Phone number
    * @returns User object
-   * @throws Error if user is not found
+   * @throws UserNotFoundError if user is not found
+   * @throws DatabaseError if database operation fails
    */
   async getUserByPhone(phone: string) {
     return await userRepository.getUserByPhone(phone);
